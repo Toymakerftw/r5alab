@@ -1014,3 +1014,85 @@ END1:
 INT 3
 CODE ENDS
 END START
+
+# Pass one
+
+#include<stdio.h> 
+#include<conio.h>
+#include<stdlib.h> 
+#include<string.h> 
+void main()
+{
+FILE *f1, *f2, *f3, *f4, *f5; int LOCCTR, SA, o, x, size;
+char L[20], OP[20], O[20], OPT[20], SYM[20];
+f1=fopen("input.txt", "r");
+f5=fopen("symtab.txt", "w");
+f3=fopen("intermediate.txt", "w");
+fscanf(f1, "%s %s %d", L, OP, &o);
+if(strcmp(OP, "START")==0)
+{
+SA=o;
+LOCCTR=SA;
+fprintf(f3, "%s %s %d\n", L, OP, o);
+}
+else LOCCTR=0;
+fscanf(f1, "%s%s", L, OP); while(!feof(f1))
+{
+fscanf(f1, "%s", O);
+fprintf(f3, "%d %s %s %s \n", LOCCTR, L, OP, O); if(strcmp(L, "-")!=0 && strcmp(L, "START")!=0)
+{
+fprintf(f5, "%d %s\n", LOCCTR, L);
+}
+f2=fopen("optab.txt", "r");
+fscanf(f2, "%s %d", OPT, &o); while(!feof(f2))
+{
+if(strcmp(OP, OPT)==0)
+{
+LOCCTR+=3;
+size=3; break;
+}
+else if(OP[0]=='+')
+{
+LOCCTR+=4;
+size=4; break;
+
+}
+fscanf(f2, "%s %d", OPT, &o);
+}
+fclose(f2);
+if(strcmp(OP, "WORD")==0)
+{
+LOCCTR+=3;
+}
+else if(strcmp(OP, "RESW")==0)
+{
+x=atoi(O);
+LOCCTR+=(3*x);
+}
+else if(strcmp(OP, "RESB")==0)
+{
+x=atoi(O);
+LOCCTR+=x;
+}
+else if(strcmp(OP, "BYTE")==0)
+{
+if(O[0]=='X')
+{
+LOCCTR+=1;
+}
+else
+{
+x=strlen(O)-2;
+LOCCTR+=x;
+}
+}
+fscanf(f1, "%s %s", L, OP);
+}
+if(strcmp(OP, "END")==0)
+{
+f4=fopen("length.txt", "w"); x=LOCCTR-SA;
+fprintf(f4, "%d", x);
+}
+fclose(f1); fclose(f2); fclose(f3); fclose(f4);
+}
+
