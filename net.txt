@@ -1,0 +1,761 @@
+xperiment 2 Server
+
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/socket.h>
+#include <stdlib.h>
+#include <netinet/in.h>
+#include <string.h>
+#define PORT 8080
+int main(int argc, char const *argv[])
+{
+ int server_fd, new_socket, valread;
+ struct sockaddr_in address;
+ int opt = 1;
+ int addrlen = sizeof(address);
+ char buffer[1024] = {0};
+ char *hello = "Hello from server";
+ 
+ // Creating socket file descriptor
+ if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
+ {
+ perror("socket failed");
+ exit(EXIT_FAILURE);
+ }
+ 
+ // Forcefully attaching socket to the port 8080
+ if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,
+ &opt, sizeof(opt)))
+ {
+ perror("setsockopt");
+ exit(EXIT_FAILURE);
+ }
+ address.sin_family = AF_INET;
+ address.sin_addr.s_addr = INADDR_ANY;
+ address.sin_port = htons( PORT );
+ 
+ // Forcefully attaching socket to the port 8080
+ if (bind(server_fd, (struct sockaddr *)&address,
+ sizeof(address))<0)
+ {
+ perror("bind failed");
+ exit(EXIT_FAILURE);
+ }
+ if (listen(server_fd, 3) < 0)
+ {
+ perror("listen");
+ exit(EXIT_FAILURE);
+ }
+ if ((new_socket = accept(server_fd, (struct sockaddr *)&address,
+ (socklen_t*)&addrlen))<0)
+ {
+ perror("accept");
+ exit(EXIT_FAILURE);
+ }
+ valread = read( new_socket , buffer, 1024);
+ printf("%s\n",buffer );
+ send(new_socket , hello , strlen(hello) , 0 );
+ printf("Hello message sent\n");
+ return 0;
+}
+
+Experiment 2 Client
+
+#include <stdio.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <string.h>
+#define PORT 8080
+int main(int argc, char const *argv[])
+{
+ int sock = 0, valread;
+ struct sockaddr_in serv_addr;
+ char *hello = "Hello from client";
+ char buffer[1024] = {0};
+ if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+ {
+ printf("\n Socket creation error \n");
+ return -1;
+ }
+ serv_addr.sin_family = AF_INET;
+ serv_addr.sin_port = htons(PORT);
+ 
+ // Convert IPv4 and IPv6 addresses from text to binary form
+ if(inet_pton(AF_INET, "172.20.3.7", &serv_addr.sin_addr)<=0)
+ {
+ printf("\nInvalid address/ Address not supported \n");
+ return -1;
+ }
+ if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 
+0)
+ {
+ printf("\nConnection Failed \n");
+ return -1;
+ }
+ send(sock , hello , strlen(hello) , 0 );
+ printf("Hello message sent\n");
+ valread = read( sock , buffer, 1024);
+ printf("%s\n",buffer );
+ return 0;
+}
+Output
+
+Experiment 3 Server
+
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/socket.h>
+#include <stdlib.h>
+#include <netinet/in.h>
+#include <string.h>
+#define PORT 8080
+int main(int argc, char const *argv[])
+{
+ int server_fd, new_socket, valread;
+ struct sockaddr_in address;
+ int opt = 1;
+ int addrlen = sizeof(address);
+ char buffer[1024] = {0};
+ char *hello = "Hello from server";
+ char ch[20];
+ // Creating socket file descriptor
+ if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
+ {
+ perror("socket failed");
+ exit(EXIT_FAILURE);
+ }
+ 
+ // Forcefully attaching socket to the port 8080
+ if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,
+ &opt, sizeof(opt)))
+ {
+ perror("setsockopt");
+ exit(EXIT_FAILURE);
+ }
+ address.sin_family = AF_INET;
+ address.sin_addr.s_addr = INADDR_ANY;
+ address.sin_port = htons( PORT );
+ 
+ // Forcefully attaching socket to the port 8080
+ if (bind(server_fd, (struct sockaddr *)&address,
+ sizeof(address))<0)
+ {
+ perror("bind failed");
+ exit(EXIT_FAILURE);
+ }
+ if (listen(server_fd, 3) < 0)
+ {
+ perror("listen");
+ exit(EXIT_FAILURE);
+ }
+ if ((new_socket = accept(server_fd, (struct sockaddr *)&address,
+ (socklen_t*)&addrlen))<0)
+ {
+ perror("accept");
+ exit(EXIT_FAILURE);
+ }
+ 
+ do{
+ valread = read( new_socket , buffer, sizeof(buffer));
+ buffer[valread]='\0';
+ printf("Message from client%s\n",buffer );
+ scanf(" %s",ch);
+ send(new_socket , ch , strlen(ch) , 0 );
+ printf("Message send to client\n");
+ }while(strcmp(ch,"quit")); 
+ return 0;
+}
+
+Experiment 3 Client
+
+#include <stdio.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <string.h>
+#define PORT 8080
+int main(int argc, char const *argv[])
+{
+ int sock = 0, valread;
+ struct sockaddr_in serv_addr;
+ char *hello = "Hello from client";
+ char buffer[1024] = {0};
+ char hello2[10];
+ if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+ {
+ printf("\n Socket creation error \n");
+ return -1;
+ }
+ serv_addr.sin_family = AF_INET;
+ serv_addr.sin_port = htons(PORT);
+ 
+ // Convert IPv4 and IPv6 addresses from text to binary form
+ if(inet_pton(AF_INET, "172.20.3.7", &serv_addr.sin_addr)<=0)
+ {
+ printf("\nInvalid address/ Address not supported \n");
+ return -1;
+ }
+ if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 
+0)
+ {
+ printf("\nConnection Failed \n");
+ return -1;
+ }
+ 
+ do{
+ scanf(" %s",hello2);
+ send(sock , hello2 , strlen(hello2) , 0 );
+ printf("message sent to server\n");
+ valread = read( sock , buffer, 1024);
+ buffer[valread]='\0';
+ printf("Message from server:%s\n",buffer );
+ }while(strcmp(hello2,"quit"));
+ return 0;
+}
+Output
+
+Experiment 4 Time Server
+
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/socket.h>
+#include <stdlib.h>
+#include <netinet/in.h>
+#include <string.h>
+#include<time.h>
+#define PORT 8080
+int main(int argc, char const *argv[])
+{
+ int server_fd, new_socket, valread;
+ struct sockaddr_in address;
+ int opt = 1;
+ int addrlen = sizeof(address);
+ char buffer[1024] = {0};
+ char *hello = "Hello from Server";
+ char ch[20];
+ // Creating socket file descriptor
+ if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
+ {
+ perror("socket failed");
+ exit(EXIT_FAILURE);
+ }
+ 
+ // Forcefully attaching socket to the port 8080
+ if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,
+ &opt, sizeof(opt)))
+ {
+ perror("setsockopt");
+ exit(EXIT_FAILURE);
+ }
+ address.sin_family = AF_INET;
+ address.sin_addr.s_addr = INADDR_ANY;
+ address.sin_port = htons( PORT );
+ 
+ // Forcefully attaching socket to the port 8080
+ if (bind(server_fd, (struct sockaddr *)&address,
+ sizeof(address))<0)
+ {
+ perror("bind failed");
+ exit(EXIT_FAILURE);
+ }
+ if (listen(server_fd, 3) < 0)
+ {
+ perror("listen");
+ exit(EXIT_FAILURE);
+ }
+ if ((new_socket = accept(server_fd, (struct sockaddr *)&address,
+ (socklen_t*)&addrlen))<0)
+ {
+ perror("accept");
+ exit(EXIT_FAILURE);
+ }
+ time_t t; // not a primitive datatype
+ do{
+ valread = read( new_socket , buffer, sizeof(buffer));
+ buffer[valread]='\0';
+ printf("Request from client %s\n",buffer );
+ if (!strcmp(buffer,"get time"))
+ { time(&t);
+ strcpy (ch,ctime(&t));
+ //scanf(" %s",ch);
+ send(new_socket , ch , strlen(ch) , 0 );
+ printf("Time sent to client\n");
+ }
+else{
+strcpy (ch,"Wrong command");
+ //scanf(" %s",ch);
+ send(new_socket , ch , strlen(ch) , 0 );
+}
+ }while(strcmp(ch,"quit")); 
+ return 0;
+}
+
+Experiment 4 Time Client
+
+//Client
+// Client side C/C++ program to demonstrate Socket programming
+#include <stdio.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <string.h>
+#define PORT 8080
+int main(int argc, char const *argv[])
+{
+ int sock = 0, valread;
+ struct sockaddr_in serv_addr;
+ char *hello = "Hello from client";
+ char buffer[1024] = {0};
+char hello2[10];
+ if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+ {
+ printf("\n Socket creation error \n");
+ return -1;
+ }
+ serv_addr.sin_family = AF_INET;
+ serv_addr.sin_port = htons(PORT);
+ 
+ // Convert IPv4 and IPv6 addresses from text to binary form
+ if(inet_pton(AF_INET, "172.20.3.7", &serv_addr.sin_addr)<=0)
+ {
+ printf("\nInvalid address/ Address not supported \n");
+ return -1;
+ }
+ if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 
+0)
+ {
+ printf("\nConnection Failed \n");
+ return -1;
+ }
+ 
+ do{
+ scanf(" %[^\n]",hello2);
+ send(sock , hello2 , strlen(hello2) , 0 );
+ printf("message sent to server\n");
+ valread = read( sock , buffer, 1024);
+ buffer[valread]='\0';
+ printf("Message from server: %s\n",buffer );
+ }while(strcmp(hello2,"quit"));
+ return 0;
+}
+Output
+
+Experiment 5 Server
+
+//Server Program
+#include<stdio.h>
+#include<string.h>
+#include<sys/socket.h>
+#include<sys/types.h>
+#include<netinet/in.h>
+#include<arpa/inet.h>
+#include<fcntl.h>
+#include<stdlib.h>
+void main(int argc, char* argv[])
+{
+int n;
+int sock_fd;
+int i,j,k;
+int row_1, row_2, col_1, col_2;
+struct sockaddr_in servaddr, cliaddr;
+int len = sizeof(cliaddr);
+int a,b,s,op;
+if((sock_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+{
+printf("Cannot create socket\n");
+exit(1);
+}
+bzero((char*)&servaddr, sizeof(servaddr));
+servaddr.sin_family = AF_INET;
+servaddr.sin_port = htons(5555);
+servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+if(bind(sock_fd, (struct sockaddr*)&servaddr, sizeof(servaddr)) < 0)
+{
+perror("bind failed:");
+exit(1);
+}
+if((n = recvfrom(sock_fd, &a, sizeof(a), 0, (struct sockaddr *)&cliaddr, 
+&len)) == -1)
+{
+perror("size not received:");
+exit(1);
+}
+if((n = recvfrom(sock_fd, &b, sizeof(b), 0, (struct sockaddr *)&cliaddr, 
+&len)) == -1)
+{
+perror("size not received:");
+exit(1);
+}
+if((n = recvfrom(sock_fd, &op, sizeof(op), 0, (struct sockaddr *)&cliaddr, 
+&len)) == -1)
+{
+perror("size not received:");
+exit(1);
+}
+if(op == 1){
+s = a*b;
+}
+else if(op == 2){
+s = a+b;
+}
+else
+s = a-b;
+n = sendto(sock_fd, &s, sizeof(s),0, (struct sockaddr*)&cliaddr,
+sizeof(cliaddr));
+if( n < 0)
+{
+perror("error in sending");
+exit(1);
+}
+//close(sock_fd);
+}
+Experiment 5 Client
+#include<stdio.h>
+#include<string.h>
+#include<sys/socket.h>
+#include<sys/types.h>
+#include<netinet/in.h>
+#include<arpa/inet.h>
+#include<fcntl.h>
+#include<stdlib.h>
+void main(int argc, char * argv[])
+{
+int i,j,n,op;
+int sock_fd;
+struct sockaddr_in servaddr;
+int a, b, s;
+printf("Enter the first integer\n");
+scanf("%d", &a);
+printf("Enter the number second integer\n");
+scanf("%d", &b);
+printf("Enter the operator 1.Multiplication, 2.Addition, 3.Subtraction\n");
+scanf("%d", &op);
+if((sock_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+{
+printf("Cannot create socket\n");
+exit(1);
+}
+bzero((char*)&servaddr, sizeof(servaddr));
+servaddr.sin_family = AF_INET;
+servaddr.sin_port = htons(5555);
+inet_pton(AF_INET, "127.0.0.1", &servaddr.sin_addr);
+n = sendto(sock_fd, &a, sizeof(a), 0, (struct sockaddr*)&servaddr, 
+sizeof(servaddr));
+if( n < 0)
+{
+perror("error in sending a");
+exit(1);
+}
+// SENDING MATRIX 1
+n = sendto(sock_fd, &b, sizeof(b), 0, (struct sockaddr*)&servaddr, 
+sizeof(servaddr));
+if( n < 0)
+{
+perror("error in sending b");
+exit(1);
+}
+n = sendto(sock_fd, &op, sizeof(op), 0, (struct sockaddr*)&servaddr, 
+sizeof(servaddr));
+if( n < 0)
+{
+perror("error in sending b");
+exit(1);
+}
+if((n=recvfrom(sock_fd, &s, sizeof(s), 0, NULL, NULL)) == -1)
+{
+perror("read error from server:");
+exit(1);
+}
+printf("\n\nthe result is \n\n\n");
+printf("%d ",s);
+}
+//printf("\n");
+//close(sock_fd);
+Output
+
+Experiment 6 Server
+
+#include<stdio.h>
+#include<string.h>
+#include<sys/socket.h>
+#include<sys/types.h>
+#include<netinet/in.h>
+#include<arpa/inet.h>
+#include<fcntl.h>
+#include<stdlib.h>
+void main(int argc, char * argv[])
+{
+int n;
+int sock_fd;
+int i,j,k;
+int y,z,op;
+char x[100],user[100],pass[100],result[100];
+char str [100];
+int row_1, row_2, col_1, col_2;
+struct sockaddr_in servaddr, cliaddr;
+int len = sizeof(cliaddr);
+if((sock_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+ {
+ printf("Cannot create socket\n");
+ exit(1);
+ }
+bzero((char*)&servaddr, sizeof(servaddr));
+servaddr.sin_family = AF_INET;
+servaddr.sin_port = htons(5556);
+servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+if(bind(sock_fd, (struct sockaddr*)&servaddr, sizeof(servaddr)) < 0)
+ {
+ exit(1);
+ }
+ 
+if((n = recvfrom(sock_fd, &user, sizeof(user), 0, (struct sockaddr 
+*)&cliaddr, &len)) == -1)
+ {
+ exit(1);
+ }
+if((n = recvfrom(sock_fd, &pass, sizeof(pass), 0, (struct sockaddr 
+*)&cliaddr, &len)) == -1)
+ {
+ exit(1);
+ }
+if(strcmp(user,"arun")==0 && strcmp(pass,"abcd")==0)
+ { strcpy(result,"login success");
+ printf("login success");
+ sendto(sock_fd, result, sizeof(result),0, (struct sockaddr*)&cliaddr, 
+sizeof(cliaddr));
+ }
+else
+ { strcpy(result,"login failure");
+ printf("\n login failure");
+ sendto(sock_fd, result, sizeof(result),0, (struct sockaddr*)&cliaddr, 
+sizeof(cliaddr));
+ //exit(1);
+ }
+ 
+ 
+if((n = recvfrom(sock_fd, &x, sizeof(x), 0, (struct sockaddr *)&cliaddr, 
+&len)) == -1)
+ {
+ exit(1);
+ }
+FILE *fp= fopen(x, "r"); // read only 
+ 
+ if (!fp ) // equivalent to saying if ( in_file == NULL ) 
+ { 
+ printf("oops, file can't be read\n"); 
+ //exit(-1); 
+ strcpy(str," File not found");
+ }
+ else fgets (str, 60, fp);
+ sendto(sock_fd, str, sizeof(str),0, (struct sockaddr*)&cliaddr, 
+sizeof(cliaddr));
+}
+
+Experiment 6 Client
+
+#include<stdio.h>
+#include<string.h>
+#include<sys/socket.h>
+#include<sys/types.h>
+#include<netinet/in.h>
+#include<arpa/inet.h>
+#include<fcntl.h>
+#include<stdlib.h>
+void main(int argc, char* argv[])
+{
+char buffer[100], line[100], cmd[100];
+char name[100];
+int sock_fd;
+char user[100],pass[100];
+char * p;
+struct sockaddr_in servaddr;
+int x,y,op,z;
+if((sock_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+{
+printf("Cannot create socket\n");
+}
+bzero(line, sizeof(line));
+bzero(buffer, sizeof(buffer));
+bzero((char*)&servaddr, sizeof(servaddr));
+servaddr.sin_family = AF_INET;
+servaddr.sin_port = htons(5555); 
+inet_pton(AF_INET, "127.0.0.1", &servaddr.sin_addr);
+printf("Enter the user name\n");
+scanf("%s", user);
+sendto(sock_fd, user, sizeof(user),0, (struct sockaddr*)&servaddr, 
+sizeof(servaddr));
+printf("Enter the password\n");
+scanf("%s", pass);
+sendto(sock_fd, pass, sizeof(pass),0, (struct sockaddr*)&servaddr, 
+sizeof(servaddr));
+int v2=recvfrom(sock_fd, &buffer, sizeof(buffer),0, NULL, NULL);
+buffer[v2]='\0';
+printf("\n\nFrom server:\n");
+printf("%s \n",buffer);
+if (strcmp(buffer,"login success")==0)
+ {printf("Enter the name of file\n");
+ scanf("%s", name);
+ sendto(sock_fd, name, sizeof(name),0, (struct sockaddr*)&servaddr, 
+sizeof(servaddr));
+ int v=recvfrom(sock_fd, &buffer, sizeof(buffer),0, NULL, NULL);
+//buffer[v]='\0';
+ printf("\n\nTHE RESULT IS \n");
+ printf("%s \n",buffer);
+ }
+ 
+}
+Output
+
+Experiment 7 Sender
+
+#include<sys/socket.h>
+#include<stdio.h>
+#include<unistd.h>
+#include<string.h>
+#include <arpa/inet.h>
+struct packet
+{ int data;
+int seq;
+};
+struct ackn
+{
+int seq;
+int ack;
+};
+void main()
+{
+ int sender,len,wind,j,l,k,c,i,r;
+ struct ackn a;
+ char buffer[1024];
+ struct packet p[10];
+ struct sockaddr_in receiver;
+ sender=socket(AF_INET,SOCK_STREAM,0);
+ receiver.sin_family=AF_INET;
+ receiver.sin_port=htons(2060);
+ receiver.sin_addr.s_addr=inet_addr("192.168.1.19");
+ connect(sender,(struct sockaddr*)&receiver,sizeof(receiver));
+ send(sender,"hai",strlen("hai"),0);
+ i=read(sender,buffer,1024);
+ buffer[i]='\0';
+ printf("Received %s\n",buffer); 
+j=1;
+l=1;
+k=1;
+printf("Sending frame \n");
+while(j<=8)
+{ printf("Enter Packet data");
+ scanf("%d",&p[j].data);
+ p[j].seq=j;
+j++;
+} 
+while(l<=4)
+{ send(sender,(char*)&p[l],sizeof(p[l]),0);
+printf("sending packet with data %d and seq no 
+%d\n",p[l].data,p[l].seq);
+l++;
+}
+c=0;
+while(c<8)
+{ 
+ r=read(sender,(char *)&a,sizeof(a));
+ if (a.ack==1)
+ { c=c+1;
+printf("received ack for packet %d\n",a.seq);
+ if(l<=8)
+{printf("sending packet with data %d and seq no 
+%d\n",p[l].data,p[l].seq);
+send(sender,(char*)&p[l],sizeof(p[l]),0);
+l++;}
+ }
+ if (a.ack==-1)
+{ printf("\n\ntime expired for packet %d\n",a.seq);
+for(k=a.seq;k<l;k++)
+{ printf("resending packet with data %d and 
+seq no %d\n",p[k].data,p[k].seq);
+send(sender,(char*)&p[k],sizeof(p[k]),0);
+}
+ }
+}
+close(sender);
+}
+'
+Receiver
+
+#include<sys/socket.h>
+#include<stdio.h>
+#include<unistd.h>
+#include<string.h>
+#include<stdlib.h>
+#include <arpa/inet.h>
+struct packet
+{ int data;
+int seq;
+};
+struct ackn
+{
+int seq;
+int ack;
+};
+void main()
+{ int receiver,sender,len,c,t,wind,j,l,k,r,ran,f,i;
+ int opt=1;
+struct ackn a[10];
+char buffer[1024];
+ struct packet p[15];
+ struct sockaddr_in senderadd,recvadr;
+receiver=socket(AF_INET,SOCK_STREAM,0);
+recvadr.sin_family=AF_INET;
+recvadr.sin_port=htons(2060);
+recvadr.sin_addr.s_addr=inet_addr("192.168.1.19");
+setsockopt(receiver, SOL_SOCKET,
+ SO_REUSEADDR | SO_REUSEPORT, &opt,
+sizeof(opt));
+if (bind(receiver,(struct sockaddr*)&recvadr,sizeof(recvadr))<0)
+ printf("Not Connected\n");
+listen(receiver,3);
+ sender=accept(receiver,(struct sockaddr*)&senderadd,&len);
+i=read(sender,buffer,1024); 
+buffer[i]='\0';
+printf("Received %s\n",buffer);
+ send(sender,"hello",strlen("hello"),0);
+j=1;
+k=1;
+ c=0;
+while(j<=4)
+{ r=read(sender,(char *)&p[j],sizeof(p[j]));
+j++;
+}
+ t=4;
+j=1;
+while(c<8)
+{ 
+ran=rand()%3;
+if(ran==0)
+ { a[j].ack=-1;
+a[j].seq=p[j].seq;
+}
+else{ a[j].ack=1;
+a[j].seq=p[j].seq;
+}
+ 
+ if(a[j].ack==1)
+ { printf("Received Packet with data %d and seq 
+%d\n",p[j].data,p[j].seq);
+send(sender,(char*)&a[j],sizeof(a[j]),0);c++;j++;
+ 
+ if(t<8){ t++;read(sender,(char*)&p[t],sizeof(p[t])); 
+}
+ }
+else
+{ send(sender,(char*)&a[j],sizeof(a[j]),0);
+ printf("\n\n");
+ for(k=j;k<=t;k++)
+ { read(sender,(char*)&p[k],sizeof(p[k]));}
+ }
+}
+close(receiver);
+}
+Output
+© 2022 SphericalKat
+Fork me!
