@@ -822,3 +822,84 @@ printf("%d\t%d\t\t%d\treject%d\t\t%d\n",i,pktsize,buffer,dis,oprate);
 }
 printf("\nProcess continues............");
 }
+
+##### Cal cleaned-up
+
+### Server
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
+int main()
+{
+    int socket_fd;
+    struct sockaddr_in servaddr, clientaddr;
+    int n,a,b,op,s;
+    int len = sizeof(clientaddr);
+    if((socket_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+    {
+        printf("Cannot Create Socket\n");
+        exit(1);
+    }
+    bzero((char*)&servaddr, sizeof(servaddr));
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_port = htons(5555);
+    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    bind(socket_fd, (struct sockaddr*)&servaddr, sizeof(servaddr));
+    recvfrom(socket_fd, &a, sizeof(a), 0, (struct sockaddr *)&clientaddr,&len);
+    recvfrom(socket_fd, &b, sizeof(b), 0, (struct sockaddr *)&clientaddr,&len);
+    recvfrom(socket_fd, &op, sizeof(op), 0, (struct sockaddr *)&clientaddr,&len);
+    if(op == 1)
+    {
+        s = a+b;
+    }
+    else if(op == 2)
+    {
+        s = a-b;
+    }
+    else 
+    {
+        s = a*b;
+    }
+    n = sendto(socket_fd, &s, sizeof(s), 0, (struct sockaddr*)&clientaddr, sizeof(clientaddr));
+    if(n < 0)
+    {
+        perror("error");
+        exit(1);
+    }
+}
+
+### Client
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
+int main()
+{
+    //create socket
+    int socket_fd;
+    struct sockaddr_in servaddr;
+    int a,b,op,s,n;
+    printf("Enter the first number");
+    scanf("%d",&a);
+    printf("Enter the second number");
+    scanf("%d",&b);
+    printf("Enter the Option");
+    scanf("%d",&op);
+    socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
+    bzero((char*)&servaddr, sizeof(servaddr));
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_port = htons(5555);
+    inet_pton(AF_INET, "127.0.0.1", &servaddr.sin_addr);
+    sendto(socket_fd, &a, sizeof(a), 0, (struct sockaddr*)&servaddr,sizeof(servaddr));
+    sendto(socket_fd, &b, sizeof(b), 0, (struct sockaddr*)&servaddr,sizeof(servaddr));
+    sendto(socket_fd, &op, sizeof(op), 0, (struct sockaddr*)&servaddr,sizeof(servaddr));
+    recvfrom(socket_fd, &s, sizeof(s), 0, NULL, NULL);
+    printf("Result is :");
+    printf("%d",s);
+}
